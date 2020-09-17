@@ -23,7 +23,7 @@ var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.ge
 d3.json(link, function(response) {
 
     for (var i = 0; i < response.features.length; i++) {
-
+        circleMarker = []
         var location = response.features[i].geometry;
         if (location) {
             var latlng = [location.coordinates[1], location.coordinates[0]];
