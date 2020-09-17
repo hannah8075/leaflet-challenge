@@ -1,6 +1,3 @@
-
-
-
 // Creating map object
 var myMap = L.map("map", {
     center: [39.8283, -98.5795],
@@ -15,7 +12,7 @@ var lightmap = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/
     zoomOffset: -1,
     id: "mapbox/light-v10",
     accessToken: API_KEY
-}).addTo(myMap);
+});
 
 var satellite = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
     attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
@@ -24,7 +21,7 @@ var satellite = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}
     zoomOffset: -1,
     id: "mapbox/satellite-streets-v9",
     accessToken: API_KEY
-});
+}).addTo(myMap);
 
 var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
     attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
@@ -55,7 +52,7 @@ d3.json(link, function(response) {
 
         var earthquake = L.circle(latlng, {
             weight:0.5,
-            fillOpacity: 0.75,
+            fillOpacity: 1,
             color: "black",
             fillColor: chooseColor(mag),
             radius: (mag)*20000
@@ -70,10 +67,11 @@ d3.json(link, function(response) {
     var tectonicLink = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
     d3.json(tectonicLink, function(plateData) {
         var tectonicLayer = L.geoJson(plateData, {
-          color: "green",
-          weight: 1.5
+          color: "red",
+          weight: 2
         });
         tectonicLayer.addTo(myMap);
+        earthquakeLayer.addTo(myMap);
     
         var baseMaps = {
             Satellite: satellite,
@@ -81,17 +79,13 @@ d3.json(link, function(response) {
             Outdoors: outdoors
             };
           
-            var overlayMaps = {
+        var overlayMaps = {
             "Tectonic Plates": tectonicLayer,
-            "Earthquakes": earthquakeLayer
             };
 
-            // control which layers are visible.
-            L.control.layers(baseMaps, overlayMaps).addTo(myMap);   
-            
-    
+        // control which layers are visible.
+        L.control.layers(baseMaps, overlayMaps).addTo(myMap);   
     });
-    
 });
 
 function chooseColor(magnitude) {
