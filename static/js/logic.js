@@ -1,25 +1,17 @@
-// Creating map object
-var myMap = L.map("map", {
-    center: [39.8283, -98.5795],
-    zoom: 5
+// Use this link to get the geojson data
+var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
+var tectonicLink = "https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_boundaries.json";
+
+// Grabbing our GeoJSON data
+d3.json(link, function(eqData) {
+    d3.json(tectonicLink, function(plateData) {
+        createFeatures(eqData.features, plateData.features);
+    });
 });
 
-// Adding tile layer
-L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
-    attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-    tileSize: 512,
-    maxZoom: 18,
-    zoomOffset: -1,
-    id: "mapbox/light-v10",
-    accessToken: API_KEY
-}).addTo(myMap);
+function createFeatures(eqData, plateData) {
 
-  
-// Use this link to get the geojson data.
-var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
-
-// Grabbing our GeoJSON data..
-d3.json(link, function(response) {
+    var earthquakeMarkers = [];
 
     for (var i = 0; i < response.features.length; i++) {
 
@@ -33,7 +25,7 @@ d3.json(link, function(response) {
             var mag = [properties.mag];
         }
 
-        var eqarthquake = L.circle(latlng, {
+        earthquakeMarkers.push(L.circle(latlng, {
             weight:0.5,
             fillOpacity: 0.75,
             color: "black",
@@ -41,11 +33,18 @@ d3.json(link, function(response) {
             radius: (mag)*20000
           })
         .bindPopup("<h3>" + properties.place + "<br>Magnitude: " + mag)
-       .addTo(myMap);
+        );
+    }
+};
 
-    };
+var earthquakeLayer = L.layerGroup(earthquakeMarkers);
+
+plateData= L.geoJSON(plateData, {
+    color: "orange",
+    weight: 2
 });
 
+//chooseColor function based on magnitude size
 function chooseColor(magnitude) {
     switch (true) {
         case magnitude > 5:
@@ -63,6 +62,56 @@ function chooseColor(magnitude) {
     }
 };
 
+
+// Defining tile layer
+var lightmap = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+    attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+    tileSize: 512,
+    maxZoom: 18,
+    zoomOffset: -1,
+    id: "mapbox/light-v10",
+    accessToken: API_KEY
+});
+
+var satellite = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+    attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+    tileSize: 512,
+    maxZoom: 18,
+    zoomOffset: -1,
+    id: "mapbox/satellite-streets-v9",
+    accessToken: API_KEY
+});
+var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+    attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+    tileSize: 512,
+    maxZoom: 18,
+    zoomOffset: -1,
+    id: "mapbox/outdoors-v9",
+    accessToken: API_KEY
+});
+
+var baseMaps = {
+    Light: lightmap,
+    Satellite: satellite,
+    Outdoors: outdoors
+};
+
+var overlayMaps = {
+    Earthquakes: earthquakeLayer,
+    Tectonic_Plates: plateData
+};
+
+// Creating map object and set default layers
+var myMap = L.map("map", {
+    center: [39.8283, -98.5795],
+    zoom: 5,
+    layers:[lightmap, earthquakeLayer]
+});
+
+//Add layer control
+L.control.layers(baseMaps, overlayMaps).addTo(myMap);
+
+// Adding legend
 var legend = L.control({
     position: "bottomright"
   });
