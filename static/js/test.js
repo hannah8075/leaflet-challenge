@@ -1,8 +1,5 @@
-// Creating map object
-var myMap = L.map("map", {
-    center: [39.8283, -98.5795],
-    zoom: 5
-});
+var earthquakeLayer = L.layerGroup();
+var tectonicLayer = L.layerGroup();
 
 // Adding tile layer
 var lightmap = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
@@ -21,7 +18,7 @@ var satellite = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}
     zoomOffset: -1,
     id: "mapbox/satellite-streets-v9",
     accessToken: API_KEY
-}).addTo(myMap);
+});
 
 var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
     attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
@@ -31,6 +28,27 @@ var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/
     id: "mapbox/outdoors-v9",
     accessToken: API_KEY
 });
+
+// Creating map object
+var myMap = L.map("map", {
+    center: [39.8283, -98.5795],
+    zoom: 5,
+    layers: [satellite, earthquakeLayer, tectonicLayer]
+});
+
+var baseMaps = {
+    Satellite: satellite,
+    Light: lightmap,
+    Outdoors: outdoors
+    };
+  
+var overlayMaps = {
+    "Tectonic Plates": tectonicLayer,
+    "Earthquake":earthquakeLayer
+    };
+
+// control which layers are visible.
+L.control.layers(baseMaps, overlayMaps).addTo(myMap);   
   
 // Use this link to get the geojson data.
 var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
@@ -39,7 +57,6 @@ var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.ge
 d3.json(link, function(response) {
 
     for (var i = 0; i < response.features.length; i++) {
-        circleMarkers = []
         var location = response.features[i].geometry;
         if (location) {
             var latlng = [location.coordinates[1], location.coordinates[0]];
@@ -58,33 +75,17 @@ d3.json(link, function(response) {
             radius: (mag)*20000
           })
         .bindPopup("<h3>" + properties.place + "<br>Magnitude: " + mag);
-        circleMarkers.push(earthquake);
-        
-        var earthquakeLayer = L.layerGroup(circleMarkers);
-        earthquakeLayer.addTo(myMap);
+        earthquake.addTo(earthquakeLayer);  
     };
+
 
     var tectonicLink = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
     d3.json(tectonicLink, function(plateData) {
-        var tectonicLayer = L.geoJson(plateData, {
-          color: "red",
-          weight: 2
+        var tectonic = L.geoJson(plateData, {
+            color: "red",
+            weight: 2
         });
-        tectonicLayer.addTo(myMap);
-        earthquakeLayer.addTo(myMap);
-    
-        var baseMaps = {
-            Satellite: satellite,
-            Light: lightmap,
-            Outdoors: outdoors
-            };
-          
-        var overlayMaps = {
-            "Tectonic Plates": tectonicLayer,
-            };
-
-        // control which layers are visible.
-        L.control.layers(baseMaps, overlayMaps).addTo(myMap);   
+        tectonic.addTo(tectonicLayer);
     });
 });
 
